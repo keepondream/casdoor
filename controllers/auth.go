@@ -191,7 +191,7 @@ func (c *ApiController) GetApplicationLogin() {
 		c.ResponseError(msg, application)
 	} else {
 		if application.ParentId != "" {
-			parent := object.GetApplication(application.ParentId)
+			parent, _ := object.GetApplication(application.ParentId)
 			if parent != nil {
 				parent.ClientId = application.ClientId
 				parent.ClientSecret = application.ClientSecret
