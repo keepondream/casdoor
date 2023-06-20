@@ -91,6 +91,17 @@ class UserEditPage extends React.Component {
       });
   }
 
+  addUserKeys() {
+    UserBackend.addUserKeys(this.state.user)
+      .then((res) => {
+        if (res.status === "ok") {
+          this.getUser();
+        } else {
+          Setting.showMessage("error", res.msg);
+        }
+      });
+  }
+
   getOrganizations() {
     OrganizationBackend.getOrganizations("admin")
       .then((res) => {
@@ -266,6 +277,11 @@ class UserEditPage extends React.Component {
       }
     }
 
+    let isKeysGenerated = false;
+    if (this.state.user.accessKey !== "" && this.state.user.accessKey !== "") {
+      isKeysGenerated = true;
+    }
+
     if (accountItem.name === "Organization") {
       return (
         <Row style={{marginTop: "10px"}} >
@@ -293,7 +309,7 @@ class UserEditPage extends React.Component {
           </Col>
           <Col span={22} >
             <Select virtual={false} mode="multiple" style={{width: "100%"}} disabled={disabled} value={this.state.user.groups ?? []} onChange={(value => {
-              if (this.state.groups?.filter(group => value.includes(group.id))
+              if (this.state.groups?.filter(group => value.includes(group.name))
                 .filter(group => group.type === "Physical").length > 1) {
                 Setting.showMessage("error", i18next.t("general:You can only select one physical group"));
                 return;
@@ -303,7 +319,7 @@ class UserEditPage extends React.Component {
             })}
             >
               {
-                this.state.groups?.map((group) => <Option key={group.id} value={group.id}>
+                this.state.groups?.map((group) => <Option key={group.name} value={group.name}>
                   <Space>
                     {group.type === "Physical" ? <UsergroupAddOutlined /> : <HolderOutlined />}
                     {group.displayName}
@@ -688,6 +704,37 @@ class UserEditPage extends React.Component {
               onChange={(value => {this.updateUserField("signupApplication", value);})}
               options={this.state.applications.map((application) => Setting.getOption(application.name, application.name))
               } />
+          </Col>
+        </Row>
+      );
+    } else if (accountItem.name === "API key") {
+      return (
+        <Row style={{marginTop: "20px"}} >
+          <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
+            {Setting.getLabel(i18next.t("general:API key"), i18next.t("general:API key - Tooltip"))} :
+          </Col>
+          <Col span={22} >
+            <Row style={{marginTop: "20px"}} >
+              <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 1}>
+                {Setting.getLabel(i18next.t("general:Access key"), i18next.t("general:Access key - Tooltip"))} :
+              </Col>
+              <Col span={22} >
+                <Input value={this.state.user.accessKey} disabled={true} />
+              </Col>
+            </Row>
+            <Row style={{marginTop: "20px"}} >
+              <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 1}>
+                {Setting.getLabel(i18next.t("general:Access secret"), i18next.t("general:Access secret - Tooltip"))} :
+              </Col>
+              <Col span={22} >
+                <Input value={this.state.user.accessSecret} disabled={true} />
+              </Col>
+            </Row>
+            <Row style={{marginTop: "20px"}} >
+              <Col span={22} >
+                <Button onClick={() => this.addUserKeys()}>{i18next.t(isKeysGenerated ? "general:update" : "general:generate")}</Button>
+              </Col>
+            </Row>
           </Col>
         </Row>
       );

@@ -34,6 +34,7 @@ class OrganizationListPage extends BaseListPage {
       favicon: `${Setting.StaticBaseUrl}/img/favicon.png`,
       passwordType: "plain",
       PasswordSalt: "",
+      passwordOptions: [],
       countryCodes: ["CN"],
       defaultAvatar: `${Setting.StaticBaseUrl}/img/casbin.svg`,
       defaultApplication: "",
@@ -60,6 +61,7 @@ class OrganizationListPage extends BaseListPage {
         {name: "Bio", visible: true, viewRule: "Public", modifyRule: "Self"},
         {name: "Tag", visible: true, viewRule: "Public", modifyRule: "Admin"},
         {name: "Signup application", visible: true, viewRule: "Public", modifyRule: "Admin"},
+        {name: "API key", label: i18next.t("general:API key")},
         {name: "Roles", visible: true, viewRule: "Public", modifyRule: "Immutable"},
         {name: "Permissions", visible: true, viewRule: "Public", modifyRule: "Immutable"},
         {name: "Groups", visible: true, viewRule: "Public", modifyRule: "Immutable"},
@@ -227,7 +229,7 @@ class OrganizationListPage extends BaseListPage {
         render: (text, record, index) => {
           return (
             <div>
-              <Button style={{marginTop: "10px", marginBottom: "10px", marginRight: "10px"}} type="primary" onClick={() => this.props.history.push(`/group-tree/${record.name}`)}>{i18next.t("general:Groups")}</Button>
+              <Button style={{marginTop: "10px", marginBottom: "10px", marginRight: "10px"}} type="primary" onClick={() => this.props.history.push(`/trees/${record.name}`)}>{i18next.t("general:Groups")}</Button>
               <Button style={{marginTop: "10px", marginBottom: "10px", marginRight: "10px"}} type="primary" onClick={() => this.props.history.push(`/organizations/${record.name}/users`)}>{i18next.t("general:Users")}</Button>
               <Button style={{marginTop: "10px", marginBottom: "10px", marginRight: "10px"}} onClick={() => this.props.history.push(`/organizations/${record.name}`)}>{i18next.t("general:Edit")}</Button>
               <PopconfirmModal
@@ -255,7 +257,7 @@ class OrganizationListPage extends BaseListPage {
           title={() => (
             <div>
               {i18next.t("general:Organizations")}&nbsp;&nbsp;&nbsp;&nbsp;
-              <Button type="primary" size="small" onClick={this.addOrganization.bind(this)}>{i18next.t("general:Add")}</Button>
+              <Button type="primary" size="small" disabled={!Setting.isAdminUser(this.props.account)} onClick={this.addOrganization.bind(this)}>{i18next.t("general:Add")}</Button>
             </div>
           )}
           loading={this.state.loading}
