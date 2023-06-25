@@ -111,3 +111,13 @@ dry-run: ## Dry run for helm install
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	helm delete ${APP} -n ${NAMESPACE}
+
+docker-build-okteto: ## Build docker image with the manager.
+	docker build -f ./Dockerfile.okteto -t ${REGISTRY}/${IMG}:${IMG_TAG} .
+
+docker-push-okteto: docker-build-okteto ## Push docker image with the manager.
+	docker tag ${REGISTRY}/${IMG}:${IMG_TAG} keepondream/casdoor:latest
+	docker push keepondream/casdoor:latest
+
+
+# docker.io/casbin/casdoor:20230612-v1.335.1-8-gf7c081-dirty 
