@@ -773,7 +773,8 @@ func (c *ApiController) HandleSamlLogin() {
 func (c *ApiController) HandleOfficialAccountEvent() {
 	respBytes, err := ioutil.ReadAll(c.Ctx.Request.Body)
 	if err != nil {
-		panic(err)
+		c.ResponseError(err.Error())
+		return
 	}
 
 	var data struct {
@@ -783,7 +784,8 @@ func (c *ApiController) HandleOfficialAccountEvent() {
 	}
 	err = xml.Unmarshal(respBytes, &data)
 	if err != nil {
-		panic(err)
+		c.ResponseError(err.Error())
+		return
 	}
 
 	lock.Lock()
