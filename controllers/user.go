@@ -41,7 +41,8 @@ func (c *ApiController) GetGlobalUsers() {
 	if limit == "" || page == "" {
 		maskedUsers, err := object.GetMaskedUsers(object.GetGlobalUsers())
 		if err != nil {
-			panic(err)
+			c.ResponseError(err.Error())
+			return
 		}
 
 		c.Data["json"] = maskedUsers
@@ -80,7 +81,7 @@ func (c *ApiController) GetGlobalUsers() {
 // @router /get-users [get]
 func (c *ApiController) GetUsers() {
 	owner := c.Input().Get("owner")
-	groupId := c.Input().Get("groupId")
+	groupName := c.Input().Get("groupName")
 	limit := c.Input().Get("pageSize")
 	page := c.Input().Get("p")
 	field := c.Input().Get("field")
@@ -89,8 +90,8 @@ func (c *ApiController) GetUsers() {
 	sortOrder := c.Input().Get("sortOrder")
 
 	if limit == "" || page == "" {
-		if groupId != "" {
-			maskedUsers, err := object.GetMaskedUsers(object.GetUsersByGroup(groupId))
+		if groupName != "" {
+			maskedUsers, err := object.GetMaskedUsers(object.GetGroupUsers(groupName))
 			if err != nil {
 				c.ResponseError(err.Error())
 				return
@@ -101,21 +102,22 @@ func (c *ApiController) GetUsers() {
 
 		maskedUsers, err := object.GetMaskedUsers(object.GetUsers(owner))
 		if err != nil {
-			panic(err)
+			c.ResponseError(err.Error())
+			return
 		}
 
 		c.Data["json"] = maskedUsers
 		c.ServeJSON()
 	} else {
 		limit := util.ParseInt(limit)
-		count, err := object.GetUserCount(owner, field, value, groupId)
+		count, err := object.GetUserCount(owner, field, value, groupName)
 		if err != nil {
 			c.ResponseError(err.Error())
 			return
 		}
 
 		paginator := pagination.SetPaginator(c.Ctx, limit, count)
-		users, err := object.GetPaginationUsers(owner, paginator.Offset(), limit, field, value, sortField, sortOrder, groupId)
+		users, err := object.GetPaginationUsers(owner, paginator.Offset(), limit, field, value, sortField, sortOrder, groupName)
 		if err != nil {
 			c.ResponseError(err.Error())
 			return
@@ -153,7 +155,8 @@ func (c *ApiController) GetUser() {
 	if userId != "" && owner != "" {
 		userFromUserId, err = object.GetUserByUserId(owner, userId)
 		if err != nil {
-			panic(err)
+			c.ResponseError(err.Error())
+			return
 		}
 
 		id = util.GetId(userFromUserId.Owner, userFromUserId.Name)
@@ -165,7 +168,8 @@ func (c *ApiController) GetUser() {
 
 	organization, err := object.GetOrganization(util.GetId("admin", owner))
 	if err != nil {
-		panic(err)
+		c.ResponseError(err.Error())
+		return
 	}
 
 	if !organization.IsProfilePublic {
@@ -190,17 +194,21 @@ func (c *ApiController) GetUser() {
 	}
 
 	if err != nil {
-		panic(err)
+		c.ResponseError(err.Error())
+		return
 	}
 
+	user.MultiFactorAuths = object.GetAllMfaProps(user, true)
 	err = object.ExtendUserWithRolesAndPermissions(user)
 	if err != nil {
-		panic(err)
+		c.ResponseError(err.Error())
+		return
 	}
 
 	maskedUser, err := object.GetMaskedUser(user)
 	if err != nil {
-		panic(err)
+		c.ResponseError(err.Error())
+		return
 	}
 
 	c.Data["json"] = maskedUser
@@ -410,15 +418,12 @@ func (c *ApiController) SetPassword() {
 		c.ResponseError(c.T("user:New password cannot contain blank space."))
 		return
 	}
-	if len(newPassword) <= 5 {
-		c.ResponseError(c.T("user:New password must have at least 6 characters"))
-		return
-	}
 
 	userId := util.GetId(userOwner, userName)
 
 	requestUserId := c.GetSessionUsername()
 	if requestUserId == "" && code == "" {
+		c.ResponseError(c.T("general:Please login first"), "Please login first")
 		return
 	} else if code == "" {
 		hasPermission, err := object.CheckUserPermission(requestUserId, userId, true, c.GetAcceptLanguage())
@@ -428,7 +433,7 @@ func (c *ApiController) SetPassword() {
 		}
 	} else {
 		if code != c.GetSession("verifiedCode") {
-			c.ResponseError("")
+			c.ResponseError(c.T("general:Missing parameter"))
 			return
 		}
 		c.SetSession("verifiedCode", "")
@@ -446,6 +451,12 @@ func (c *ApiController) SetPassword() {
 			c.ResponseError(msg)
 			return
 		}
+	}
+
+	msg := object.CheckPasswordComplexity(targetUser, newPassword)
+	if msg != "" {
+		c.ResponseError(msg)
+		return
 	}
 
 	targetUser.Password = newPassword
@@ -494,7 +505,8 @@ func (c *ApiController) GetSortedUsers() {
 
 	maskedUsers, err := object.GetMaskedUsers(object.GetSortedUsers(owner, sorter, limit))
 	if err != nil {
-		panic(err)
+		c.ResponseError(err.Error())
+		return
 	}
 
 	c.Data["json"] = maskedUsers
@@ -526,5 +538,36 @@ func (c *ApiController) GetUserCount() {
 	}
 
 	c.Data["json"] = count
+	c.ServeJSON()
+}
+
+// AddUserkeys
+// @Title AddUserkeys
+// @router /add-user-keys [post]
+// @Tag User API
+func (c *ApiController) AddUserkeys() {
+	var user object.User
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &user)
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+
+	isAdmin := c.IsAdmin()
+	affected, err := object.AddUserkeys(&user, isAdmin)
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+
+	c.ResponseOk(affected)
+}
+
+func (c *ApiController) RemoveUserFromGroup() {
+	owner := c.Ctx.Request.Form.Get("owner")
+	name := c.Ctx.Request.Form.Get("name")
+	groupName := c.Ctx.Request.Form.Get("groupName")
+
+	c.Data["json"] = wrapActionResponse(object.RemoveUserFromGroup(owner, name, groupName))
 	c.ServeJSON()
 }

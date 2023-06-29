@@ -55,6 +55,9 @@ func (c *ApiController) T(error string) string {
 // GetAcceptLanguage ...
 func (c *ApiController) GetAcceptLanguage() string {
 	language := c.Ctx.Request.Header.Get("Accept-Language")
+	if len(language) > 2 {
+		language = language[0:2]
+	}
 	return conf.GetLanguage(language)
 }
 
@@ -94,7 +97,8 @@ func (c *ApiController) RequireSignedInUser() (*object.User, bool) {
 
 	user, err := object.GetUser(userId)
 	if err != nil {
-		panic(err)
+		c.ResponseError(err.Error())
+		return nil, false
 	}
 
 	if user == nil {
