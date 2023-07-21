@@ -119,5 +119,8 @@ docker-push-okteto: docker-build-okteto ## Push docker image with the manager.
 	docker tag ${REGISTRY}/${IMG}:${IMG_TAG} keepondream/casdoor:latest
 	docker push keepondream/casdoor:latest
 
+docker-push-tag:
+	docker tag keepondream/casdoor:latest keepondream/casdoor:${IMG_TAG}
+	docker push keepondream/casdoor:${IMG_TAG}
 
 # docker.io/casbin/casdoor:20230612-v1.335.1-8-gf7c081-dirty 

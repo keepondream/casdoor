@@ -149,6 +149,7 @@ func (c *ApiController) GetOrganizationApplications() {
 		c.ResponseError(c.T("general:Missing parameter") + ": organization")
 		return
 	}
+	userId = "built-in/" + userId
 
 	if limit == "" || page == "" {
 		applications, err := object.GetOrganizationApplications(owner, organization)
@@ -175,9 +176,8 @@ func (c *ApiController) GetOrganizationApplications() {
 			return
 		}
 
-		// applications := object.GetMaskedApplications(app, userId)
-		// c.ResponseOk(applications, paginator.Nums())
-		c.ResponseOk(app, paginator.Nums())
+		applications := object.GetMaskedApplications(app, userId)
+		c.ResponseOk(applications, paginator.Nums())
 	}
 }
 
