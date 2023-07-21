@@ -175,8 +175,9 @@ func (c *ApiController) GetOrganizationApplications() {
 			return
 		}
 
-		applications := object.GetMaskedApplications(app, "built-in/"+userId)
-		c.ResponseOk(applications, paginator.Nums())
+		// applications := object.GetMaskedApplications(app, userId)
+		// c.ResponseOk(applications, paginator.Nums())
+		c.ResponseOk(app, paginator.Nums())
 	}
 }
 
